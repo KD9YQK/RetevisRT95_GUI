@@ -1,6 +1,12 @@
 import serial
 import serial.threaded
 
+def temp():
+    While True:
+        bytesToRead = ser.inWaiting()
+        data = ser.read(bytesToRead)
+
+
 class SerialReader(serial.threaded.Protocol):
     def __init__(self):
         self.buffer = bytearray()
