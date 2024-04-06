@@ -12,11 +12,13 @@ def pickle_save(data, file):
 
 
 def read_serial(tty: serial.Serial):
-    while True:
+    data = b''
+    while tty.inWaiting() == 0:
+        # sleep(.5)
+        pass
+    while tty.inWaiting() > 0:
         bytesToRead = tty.inWaiting()
-        data = ser.read(bytesToRead)
-        if data is not None:
-            break
+        data += ser.read(bytesToRead)
     print(data)
     return data
 
