@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.font as tkFont
+import rt95
 
 class App:
     cur_freq = "144.520"
