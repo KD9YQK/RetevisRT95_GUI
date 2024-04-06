@@ -26,7 +26,6 @@ def read_serial():
 
 if __name__ == "__main__":
     mic_data = {}
-    TTY.isOpen()
     print('Press the buttons as they appear to record serial data')
 
     for i in range(0, 10):
