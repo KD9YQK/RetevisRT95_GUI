@@ -14,7 +14,7 @@ def pickle_load(file):
         exit()
 
 
-class rt95:
+class RT95:
     DEVICE = "/dev/ttyUSB0"
     TTY: serial.Serial
     MIC_DATA = {}
