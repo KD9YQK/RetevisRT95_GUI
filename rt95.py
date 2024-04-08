@@ -1,7 +1,10 @@
 import serial
 import pickle
 from time import sleep
+import struct
 
+def to_struct(bytestring):
+    return struct.unpack(bytestring)
 
 def pickle_load(file):
     try:
@@ -13,11 +16,20 @@ def pickle_load(file):
         print(f"ERROR - {file} not found! Run 'python3 mic_send.py' to create.")
         exit()
 
+def parse_data(bytestring):
+    pass
+
 
 class RT95:
     DEVICE = "/dev/ttyUSB0"
     TTY: serial.Serial
     MIC_DATA = {}
+
+    RX_A = False
+    RX_B = False
+    TX_A = False
+    TX_B = False
+    VFO = 'A'
 
     def __init__(self, device="/dev/ttyUSB0", baud=9600, dat_file="mic.dat"):
         self.DEVICE = device
@@ -35,7 +47,7 @@ class RT95:
     def read_serial(self):
         data = b''
         while self.TTY.inWaiting() == 0:
-            # sleep(.5)
+            sleep(.5)
             pass
         while self.TTY.inWaiting() > 0:
             data += self.TTY.read(1)
