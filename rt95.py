@@ -1,9 +1,9 @@
+import asyncio
 import serial
-import pickle
 from time import sleep
 import struct
 
-KEY = {'RESET': b'AL~KR\r\n', 
+KEYS = {'RESET': b'AL~KR\r\n', 
        '0': b'AL~K0\r\n', 
        '1': b'AL~K1\r\n', 
        '2': b'AL~K2\r\n', 
@@ -22,18 +22,12 @@ KEY = {'RESET': b'AL~KR\r\n',
        'User3': b'AL~KC\r\n', 
        'User4': b'AL~KD\r\n'}
 
+KEY_LIST = []
+for k in KEYS:
+       KEY_LIST.append(KEYS[k])
+
 def to_struct(bytestring):
     return struct.unpack(bytestring)
-
-def pickle_load(file):
-    try:
-        with open(file, 'rb') as f:
-            retval = pickle.load(f)  # deserialize using load()
-            f.close()
-        return retval
-    except FileExistsError:
-        print(f"ERROR - {file} not found! Run 'python3 mic_send.py' to create.")
-        exit()
 
 def parse_data(bytestring):
     pass
@@ -52,15 +46,14 @@ class RT95:
 
     def __init__(self, device="/dev/ttyUSB0", baud=9600, dat_file="mic.dat"):
         self.DEVICE = device
-        self.MIC_DATA = pickle_load(dat_file)
         self.TTY = serial.Serial(self.DEVICE, baud)
 
     def send_single(self, char):
-        self.TTY.write(self.MIC_DATA[char])
+        self.TTY.write(KEYS[char])
 
     def send_multiple(self, presses):
         for char in presses:
-            self.TTY.write(self.MIC_DATA[char])
+            self.TTY.write(KEYS[char])
             sleep(.1)
 
     def read_serial(self):
