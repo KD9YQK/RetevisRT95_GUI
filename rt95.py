@@ -27,54 +27,83 @@ for k in KEYS:
        KEY_LIST.append(KEYS[k])
 
 def to_struct(bytestring):
-    return struct.unpack(bytestring)
-
-def parse_data(bytestring):
-    pass
+       return struct.unpack(bytestring)
 
 
 class RT95:
-    DEVICE = "/dev/ttyUSB0"
-    TTY: serial.Serial
+       DEVICE = "/dev/ttyUSB0"
+       TTY: serial.Serial
 
-    RX_A = False
-    RX_B = False
-    TX_A = False
-    TX_B = False
-    VFO = 'A'
+       RX_A = False
+       RX_B = False
+       TX_A = False
+       TX_B = False
+       VFO = 'A'
 
-    tx_buffer = []
-       
-    def __init__(self, device="/dev/ttyUSB0", baud=9600):
-        self.DEVICE = device
-        self.TTY = serial.Serial(self.DEVICE, baud)
+       tx_buffer = []
 
-    def send_single(self, char):
-        self.tx_buffer.append(KEYS[char])
+       def parse_data(data):
+              d_spl = data.split(b'ST')
+              d_spl.pop(0)
+              for d in d_spl:
+                     d_st = to_struct(d)
+                     if d_st[6] == 0:
+                            self.VFO = 'A'
+                     else:
+                            self.VFO = 'B'
+                     if d_st[4] == 7:
+                            self.TX_A = True
+                     else:
+                            self.TX_A = False
+                     if d_st[5] == 7:
+                            self.TX_B = True
+                     else:
+                            self.TX_B = False
+                     if d_st[10] == 1 and d_st[2] == 1:
+                            self.RX_A = True
+                     elif d_st[10] == 1 and d_st[2] == 0:
+                            self.RX_B = True
+                     else:
+                            self.RX_A = False
+                            self.RX_B = False
 
-    def send_multiple(self, presses):
-        for char in presses:
-            self.tx_buffer.append(KEYS[char])
-            sleep(.1)
 
-    async def main_loop(self):
-        data = b''
-        while self.TTY.inWaiting() == 0:
-               while len(self.tx_buffer) > 0:
-                      self.TTY.write(self.tx_buffer[0])
-                      self.tx_buffer.pop(0)
-                      self.TTY.flush()
-              await asyncio.sleep(.5)
-        while self.TTY.inWaiting() > 0:
-            data += self.TTY.read(1)
-            if data in KEY_LIST:
-                   data = b''
-    
-    def setRTS(self, enable=True):
-        self.TTY.setRTS(enable)
-    
-    def setPTT(self, enable=True):
-        self.setRTS(enable)
+       def __init__(self, device="/dev/ttyUSB0", baud=9600):
+              self.DEVICE = device
+              self.TTY = serial.Serial(self.DEVICE, baud)
+
+       def send_single(self, char):
+              self.tx_buffer.append(KEYS[char])
+
+       def send_multiple(self, presses):
+              for char in presses:
+                     self.tx_buffer.append(KEYS[char])
+              
+       async def main_loop(self):
+              data = b''
+              while self.TTY.inWaiting() == 0:
+                     data = b''
+                     while len(self.tx_buffer) > 0:
+                             self.TTY.write(self.tx_buffer[0])
+                             self.tx_buffer.pop(0)
+                             self.TTY.flush()
+                             await asyncio.sleep(.2)
+                     await asyncio.sleep(.2)
+              while self.TTY.inWaiting() > 0:
+                     data += self.TTY.read(1)
+                     if data in KEY_LIST:
+                            print(f'ECHO - ', end='')
+                            print(data)
+                            data = b''
+              if data != b'':
+                     self.parse_data(data)
+                     
+
+       def setRTS(self, enable=True):
+              self.TTY.setRTS(enable)
+
+       def setPTT(self, enable=True):
+              self.setRTS(enable)
 
 
 if __name__ == "__main__":
