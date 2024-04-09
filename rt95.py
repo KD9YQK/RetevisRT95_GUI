@@ -3,6 +3,25 @@ import pickle
 from time import sleep
 import struct
 
+KEY = {'RESET': b'AL~KR\r\n', 
+       '0': b'AL~K0\r\n', 
+       '1': b'AL~K1\r\n', 
+       '2': b'AL~K2\r\n', 
+       '3': b'AL~K3\r\n', 
+       '4': b'AL~K4\r\n', 
+       '5': b'AL~K5\r\n', 
+       '6': b'AL~K6\r\n', 
+       '7': b'AL~K7\r\n', 
+       '8': b'AL~K8\r\n', 
+       '9': b'AL~K9\r\n', 
+       '*': b'AL~K*\r\n', 
+       '#': b'AL~K#\r\n', 
+       'AB': b'AL~K/\r\n', 
+       'User1': b'AL~KA\r\n', 
+       'User2': b'AL~KB\r\n', 
+       'User3': b'AL~KC\r\n', 
+       'User4': b'AL~KD\r\n'}
+
 def to_struct(bytestring):
     return struct.unpack(bytestring)
 
