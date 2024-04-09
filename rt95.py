@@ -44,7 +44,7 @@ class RT95:
     TX_B = False
     VFO = 'A'
 
-    def __init__(self, device="/dev/ttyUSB0", baud=9600, dat_file="mic.dat"):
+    def __init__(self, device="/dev/ttyUSB0", baud=9600):
         self.DEVICE = device
         self.TTY = serial.Serial(self.DEVICE, baud)
 
