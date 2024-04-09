@@ -43,27 +43,32 @@ class RT95:
     TX_B = False
     VFO = 'A'
 
+    tx_buffer = []
+       
     def __init__(self, device="/dev/ttyUSB0", baud=9600):
         self.DEVICE = device
         self.TTY = serial.Serial(self.DEVICE, baud)
 
     def send_single(self, char):
-        self.TTY.write(KEYS[char])
+        self.tx_buffer.append(KEYS[char])
 
     def send_multiple(self, presses):
         for char in presses:
-            self.TTY.write(KEYS[char])
+            self.tx_buffer.append(KEYS[char])
             sleep(.1)
 
-    def read_serial(self):
+    async def main_loop(self):
         data = b''
         while self.TTY.inWaiting() == 0:
-            sleep(.5)
-            pass
+               while len(self.tx_buffer) > 0:
+                      self.TTY.write(self.tx_buffer[0])
+                      self.tx_buffer.pop(0)
+                      self.TTY.flush()
+              await asyncio.sleep(.5)
         while self.TTY.inWaiting() > 0:
             data += self.TTY.read(1)
-        print(data)
-        return data
+            if data in KEY_LIST:
+                   data = b''
     
     def setRTS(self, enable=True):
         self.TTY.setRTS(enable)
