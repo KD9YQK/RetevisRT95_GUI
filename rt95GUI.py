@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.font as tkFont
 import rt95
 
-class App:
+class App(tk.Tk):
     cur_freq = "144.520"
     entryText = None
     btnTX = None
@@ -24,20 +24,37 @@ class App:
         self.cur_freq = self.freq_shift(num)
         self.entryText.set(self.cur_freq)
 
-    def __init__(self, root):
+    def close(self):
+        for task in self.tasks:
+            task.cancel()
+        self.loop.stop()
+        self.destroy()
+
+    async def updater(self, interval = 1/120):
+        while True:
+            self.update()
+            await asyncio.sleep(interval)
+    
+    def __init__(self, loop):
+        super().__init__()
+        self.loop = loop
+        self.tasks = []
+        # self.tasks.append(loop.create_task(self.rotator(1/60, 2)))
+        self.tasks.append(loop.create_task(self.updater()))
+        
         #setting title
-        root.title("Retevis RT95")
+        self.title("Retevis RT95")
         #setting window size
         self.entryText = tk.StringVar()
         width=264
         height=332
-        screenwidth = root.winfo_screenwidth()
-        screenheight = root.winfo_screenheight()
+        screenwidth = self.winfo_screenwidth()
+        screenheight = self.winfo_screenheight()
         alignstr = '%dx%d+%d+%d' % (width, height, (screenwidth - width) / 2, (screenheight - height) / 2)
-        root.geometry(alignstr)
-        root.resizable(width=False, height=False)
+        self.geometry(alignstr)
+        self.resizable(width=False, height=False)
 
-        entryFreq=tk.Entry(root)
+        entryFreq=tk.Entry(self)
         entryFreq["borderwidth"] = "1px"
         ft = tkFont.Font(family='Times',size=16)
         entryFreq["font"] = ft
@@ -47,7 +64,7 @@ class App:
         entryFreq.place(x=24,y=10,width=87,height=30)
         self.entryText.set(self.cur_freq)
 
-        btnClear=tk.Button(root)
+        btnClear=tk.Button(self)
         btnClear["bg"] = "#f0f0f0"
         ft = tkFont.Font(family='Times',size=8)
         btnClear["font"] = ft
@@ -57,7 +74,7 @@ class App:
         btnClear.place(x=128,y=15,width=40,height=20)
         btnClear["command"] = self.btnClear_command
 
-        btn1=tk.Button(root)
+        btn1=tk.Button(self)
         btn1["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn1["font"] = ft
@@ -67,7 +84,7 @@ class App:
         btn1.place(x=10,y=90,width=48,height=48)
         btn1["command"] = self.btn1_command
 
-        btn2=tk.Button(root)
+        btn2=tk.Button(self)
         btn2["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn2["font"] = ft
@@ -77,7 +94,7 @@ class App:
         btn2.place(x=70,y=90,width=48,height=48)
         btn2["command"] = self.btn2_command
 
-        btn3=tk.Button(root)
+        btn3=tk.Button(self)
         btn3["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn3["font"] = ft
@@ -87,7 +104,7 @@ class App:
         btn3.place(x=130,y=90,width=48,height=48)
         btn3["command"] = self.btn3_command
 
-        self.btnTX=tk.Button(root)
+        self.btnTX=tk.Button(self)
         self.btnTX["bg"] = "#90ee90"
         ft = tkFont.Font(family='Times',size=16)
         self.btnTX["font"] = ft
@@ -97,7 +114,7 @@ class App:
         self.btnTX.place(x=10,y=50,width=168,height=30)
         self.btnTX["command"] = self.btnTX_command
 
-        btn4=tk.Button(root)
+        btn4=tk.Button(self)
         btn4["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn4["font"] = ft
@@ -107,7 +124,7 @@ class App:
         btn4.place(x=10,y=150,width=48,height=48)
         btn4["command"] = self.btn4_command
 
-        btn5=tk.Button(root)
+        btn5=tk.Button(self)
         btn5["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn5["font"] = ft
@@ -117,7 +134,7 @@ class App:
         btn5.place(x=70,y=150,width=48,height=48)
         btn5["command"] = self.btn5_command
 
-        btn6=tk.Button(root)
+        btn6=tk.Button(self)
         btn6["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn6["font"] = ft
@@ -127,7 +144,7 @@ class App:
         btn6.place(x=130,y=150,width=48,height=48)
         btn6["command"] = self.btn6_command
 
-        btn7=tk.Button(root)
+        btn7=tk.Button(self)
         btn7["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn7["font"] = ft
@@ -137,7 +154,7 @@ class App:
         btn7.place(x=10,y=210,width=48,height=48)
         btn7["command"] = self.btn7_command
 
-        btn8=tk.Button(root)
+        btn8=tk.Button(self)
         btn8["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn8["font"] = ft
@@ -147,7 +164,7 @@ class App:
         btn8.place(x=70,y=210,width=48,height=48)
         btn8["command"] = self.btn8_command
 
-        btn9=tk.Button(root)
+        btn9=tk.Button(self)
         btn9["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn9["font"] = ft
@@ -157,7 +174,7 @@ class App:
         btn9.place(x=130,y=210,width=48,height=48)
         btn9["command"] = self.btn9_command
 
-        btnStar=tk.Button(root)
+        btnStar=tk.Button(self)
         btnStar["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btnStar["font"] = ft
@@ -167,7 +184,7 @@ class App:
         btnStar.place(x=10,y=270,width=48,height=48)
         btnStar["command"] = self.btnStar_command
 
-        btn0=tk.Button(root)
+        btn0=tk.Button(self)
         btn0["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btn0["font"] = ft
@@ -177,7 +194,7 @@ class App:
         btn0.place(x=70,y=270,width=48,height=48)
         btn0["command"] = self.btn0_command
 
-        btnPound=tk.Button(root)
+        btnPound=tk.Button(self)
         btnPound["bg"] = "#1e9fff"
         ft = tkFont.Font(family='Times',size=22)
         btnPound["font"] = ft
@@ -187,7 +204,7 @@ class App:
         btnPound.place(x=130,y=270,width=48,height=48)
         btnPound["command"] = self.btnPound_command
 
-        btnUser1=tk.Button(root)
+        btnUser1=tk.Button(self)
         btnUser1["bg"] = "#999999"
         ft = tkFont.Font(family='Times',size=12)
         btnUser1["font"] = ft
@@ -197,7 +214,7 @@ class App:
         btnUser1.place(x=190,y=90,width=64,height=48)
         btnUser1["command"] = self.btnUser1_command
 
-        btnUser2=tk.Button(root)
+        btnUser2=tk.Button(self)
         btnUser2["bg"] = "#999999"
         ft = tkFont.Font(family='Times',size=12)
         btnUser2["font"] = ft
@@ -207,7 +224,7 @@ class App:
         btnUser2.place(x=190,y=150,width=64,height=48)
         btnUser2["command"] = self.btnUser2_command
 
-        btnUser3=tk.Button(root)
+        btnUser3=tk.Button(self)
         btnUser3["bg"] = "#999999"
         ft = tkFont.Font(family='Times',size=12)
         btnUser3["font"] = ft
@@ -217,7 +234,7 @@ class App:
         btnUser3.place(x=190,y=210,width=64,height=48)
         btnUser3["command"] = self.btnUser3_command
 
-        btnUser4=tk.Button(root)
+        btnUser4=tk.Button(self)
         btnUser4["bg"] = "#999999"
         ft = tkFont.Font(family='Times',size=12)
         btnUser4["font"] = ft
@@ -227,7 +244,7 @@ class App:
         btnUser4.place(x=190,y=270,width=64,height=48)
         btnUser4["command"] = self.btnUser4_command
 
-        btnAB=tk.Button(root)
+        btnAB=tk.Button(self)
         btnAB["bg"] = "#ff5722"
         ft = tkFont.Font(family='Times',size=22)
         btnAB["font"] = ft
@@ -317,6 +334,7 @@ class App:
         print("AB Pressed")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()
+    loop = asyncio.get_event_loop()
+    app = App(loop)
+    loop.run_forever()
+    loop.close())
