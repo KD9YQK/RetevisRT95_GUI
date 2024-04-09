@@ -36,7 +36,6 @@ def parse_data(bytestring):
 class RT95:
     DEVICE = "/dev/ttyUSB0"
     TTY: serial.Serial
-    MIC_DATA = {}
 
     RX_A = False
     RX_B = False
