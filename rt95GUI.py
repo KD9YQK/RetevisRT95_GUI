@@ -1,28 +1,19 @@
+import asyncio
 import tkinter as tk
 import tkinter.font as tkFont
+
 import rt95
 
+
 class App(tk.Tk):
-    cur_freq = "144.520"
-    entryText = None
-    btnTX = None
-
-    def clear(self):
-        self.cur_freq = "144.520"
-        self.entryText.set("144.520")
-
-    def freq_shift(self, num):
-        split = self.cur_freq.split('.')
-        new = split[0][1:]
-        new += split[1][:1]
-        new += "."
-        new += split[1][1:]
-        new += str(num)
-        return new
-
-    def press(self, num):
-        self.cur_freq = self.freq_shift(num)
-        self.entryText.set(self.cur_freq)
+    VFO1_TXT = "---> VFO 1 <---"
+    VFO1_FREQ = "144.000"
+    VFO1RX_TXT = ""
+    VFO1TX_TXT = ""
+    VFO2_TXT = "VFO 2"
+    VFO2_FREQ = "144.000"
+    VFO2RX_TXT = ""
+    VFO2TX_TXT = ""
 
     def close(self):
         for task in self.tasks:
@@ -30,311 +21,385 @@ class App(tk.Tk):
         self.loop.stop()
         self.destroy()
 
-    async def updater(self, interval = 1/120):
+    async def updater(self, interval=1 / 30):
         while True:
+            if self.tty.RX_A:
+                self.VFO1RX_TXT = "RX"
+            else:
+                self.VFO1RX_TXT = ""
+            if self.tty.RX_B:
+                self.VFO2RX_TXT = "RX"
+            else:
+                self.VFO2RX_TXT = ""
+            if self.tty.TX_A:
+                self.VFO1TX_TXT = "TX"
+            else:
+                self.VFO1TX_TXT = ""
+            if self.tty.TX_B:
+                self.VFO2TX_TXT = "TX"
+            else:
+                self.VFO2TX_TXT = ""
+            if self.tty.VFO == 'A':
+                self.VFO1_TXT = "---> VFO 1 <---"
+                self.VFO2_TXT = "VFO 2"
+            else:
+                self.VFO1_TXT = "VFO 1"
+                self.VFO2_TXT = "---> VFO 2 <---"
+
             self.update()
             await asyncio.sleep(interval)
-    
-    def __init__(self, loop):
+
+    def __init__(self, async_loop, com_device="/dev/ttyUSB0", freq="144.520"):
         super().__init__()
-        self.loop = loop
+        self.VFO1_FREQ = freq
+        self.VFO2_FREQ = freq
+
+        # setting title
+        self.title("RT95")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+
+        self.tty = rt95.RT95(com_device)
+
+        self.loop = async_loop
         self.tasks = []
-        # self.tasks.append(loop.create_task(self.rotator(1/60, 2)))
+        self.tasks.append(loop.create_task(self.tty.main_loop()))
         self.tasks.append(loop.create_task(self.updater()))
-        
-        #setting title
-        self.title("Retevis RT95")
-        #setting window size
-        self.entryText = tk.StringVar()
-        width=264
-        height=332
+
+        # -------------Build Window-----------------------------
+        # setting window size
+        width = 200
+        height = 310
         screenwidth = self.winfo_screenwidth()
         screenheight = self.winfo_screenheight()
         alignstr = '%dx%d+%d+%d' % (width, height, (screenwidth - width) / 2, (screenheight - height) / 2)
         self.geometry(alignstr)
         self.resizable(width=False, height=False)
 
-        entryFreq=tk.Entry(self)
-        entryFreq["borderwidth"] = "1px"
-        ft = tkFont.Font(family='Times',size=16)
-        entryFreq["font"] = ft
-        entryFreq["fg"] = "#333333"
-        entryFreq["justify"] = "center"
-        entryFreq["textvariable"] = self.entryText
-        entryFreq.place(x=24,y=10,width=87,height=30)
-        self.entryText.set(self.cur_freq)
+        lblVFO1 = tk.Label(self)
+        lblVFO1["bg"] = "#393d49"
+        ft = tkFont.Font(family='Times', size=26)
+        lblVFO1["font"] = ft
+        lblVFO1["fg"] = "#90ee90"
+        lblVFO1["justify"] = "right"
+        lblVFO1["text"] = self.VFO1_FREQ
+        lblVFO1.place(x=0, y=20, width=200, height=40)
 
-        btnClear=tk.Button(self)
-        btnClear["bg"] = "#f0f0f0"
-        ft = tkFont.Font(family='Times',size=8)
-        btnClear["font"] = ft
-        btnClear["fg"] = "#000000"
-        btnClear["justify"] = "center"
-        btnClear["text"] = "Clear"
-        btnClear.place(x=128,y=15,width=40,height=20)
-        btnClear["command"] = self.btnClear_command
+        lblVFO2 = tk.Label(self)
+        lblVFO2["bg"] = "#393d49"
+        ft = tkFont.Font(family='Times', size=26)
+        lblVFO2["font"] = ft
+        lblVFO2["fg"] = "#90ee90"
+        lblVFO2["justify"] = "right"
+        lblVFO2["text"] = self.VFO2_FREQ
+        lblVFO2.place(x=0, y=80, width=200, height=40)
 
-        btn1=tk.Button(self)
-        btn1["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn1["font"] = ft
-        btn1["fg"] = "#000000"
-        btn1["justify"] = "center"
-        btn1["text"] = "1"
-        btn1.place(x=10,y=90,width=48,height=48)
-        btn1["command"] = self.btn1_command
+        btnKEY1 = tk.Button(self)
+        btnKEY1["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY1["font"] = ft
+        btnKEY1["fg"] = "#000000"
+        btnKEY1["justify"] = "center"
+        btnKEY1["text"] = "1"
+        btnKEY1.place(x=0, y=120, width=40, height=40)
+        btnKEY1["command"] = self.btnKEY1_command
 
-        btn2=tk.Button(self)
-        btn2["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn2["font"] = ft
-        btn2["fg"] = "#000000"
-        btn2["justify"] = "center"
-        btn2["text"] = "2"
-        btn2.place(x=70,y=90,width=48,height=48)
-        btn2["command"] = self.btn2_command
+        btnKEY2 = tk.Button(self)
+        btnKEY2["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY2["font"] = ft
+        btnKEY2["fg"] = "#000000"
+        btnKEY2["justify"] = "center"
+        btnKEY2["text"] = "2"
+        btnKEY2.place(x=40, y=120, width=40, height=40)
+        btnKEY2["command"] = self.btnKEY2_command
 
-        btn3=tk.Button(self)
-        btn3["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn3["font"] = ft
-        btn3["fg"] = "#000000"
-        btn3["justify"] = "center"
-        btn3["text"] = "3"
-        btn3.place(x=130,y=90,width=48,height=48)
-        btn3["command"] = self.btn3_command
+        btnKEY3 = tk.Button(self)
+        btnKEY3["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY3["font"] = ft
+        btnKEY3["fg"] = "#000000"
+        btnKEY3["justify"] = "center"
+        btnKEY3["text"] = "3"
+        btnKEY3.place(x=80, y=120, width=40, height=40)
+        btnKEY3["command"] = self.btnKEY3_command
 
-        self.btnTX=tk.Button(self)
-        self.btnTX["bg"] = "#90ee90"
-        ft = tkFont.Font(family='Times',size=16)
-        self.btnTX["font"] = ft
-        self.btnTX["fg"] = "#000000"
-        self.btnTX["justify"] = "center"
-        self.btnTX["text"] = "Transmit"
-        self.btnTX.place(x=10,y=50,width=168,height=30)
-        self.btnTX["command"] = self.btnTX_command
+        btnKEY4 = tk.Button(self)
+        btnKEY4["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY4["font"] = ft
+        btnKEY4["fg"] = "#000000"
+        btnKEY4["justify"] = "center"
+        btnKEY4["text"] = "4"
+        btnKEY4.place(x=0, y=160, width=40, height=40)
+        btnKEY4["command"] = self.btnKEY4_command
 
-        btn4=tk.Button(self)
-        btn4["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn4["font"] = ft
-        btn4["fg"] = "#000000"
-        btn4["justify"] = "center"
-        btn4["text"] = "4"
-        btn4.place(x=10,y=150,width=48,height=48)
-        btn4["command"] = self.btn4_command
+        btnKEY5 = tk.Button(self)
+        btnKEY5["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY5["font"] = ft
+        btnKEY5["fg"] = "#000000"
+        btnKEY5["justify"] = "center"
+        btnKEY5["text"] = "5"
+        btnKEY5.place(x=40, y=160, width=40, height=40)
+        btnKEY5["command"] = self.btnKEY5_command
 
-        btn5=tk.Button(self)
-        btn5["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn5["font"] = ft
-        btn5["fg"] = "#000000"
-        btn5["justify"] = "center"
-        btn5["text"] = "5"
-        btn5.place(x=70,y=150,width=48,height=48)
-        btn5["command"] = self.btn5_command
+        btnKEY6 = tk.Button(self)
+        btnKEY6["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY6["font"] = ft
+        btnKEY6["fg"] = "#000000"
+        btnKEY6["justify"] = "center"
+        btnKEY6["text"] = "6"
+        btnKEY6.place(x=80, y=160, width=40, height=40)
+        btnKEY6["command"] = self.btnKEY6_command
 
-        btn6=tk.Button(self)
-        btn6["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn6["font"] = ft
-        btn6["fg"] = "#000000"
-        btn6["justify"] = "center"
-        btn6["text"] = "6"
-        btn6.place(x=130,y=150,width=48,height=48)
-        btn6["command"] = self.btn6_command
+        btnKEY7 = tk.Button(self)
+        btnKEY7["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY7["font"] = ft
+        btnKEY7["fg"] = "#000000"
+        btnKEY7["justify"] = "center"
+        btnKEY7["text"] = "7"
+        btnKEY7.place(x=0, y=200, width=40, height=40)
+        btnKEY7["command"] = self.btnKEY7_command
 
-        btn7=tk.Button(self)
-        btn7["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn7["font"] = ft
-        btn7["fg"] = "#000000"
-        btn7["justify"] = "center"
-        btn7["text"] = "7"
-        btn7.place(x=10,y=210,width=48,height=48)
-        btn7["command"] = self.btn7_command
+        btnKEY8 = tk.Button(self)
+        btnKEY8["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY8["font"] = ft
+        btnKEY8["fg"] = "#000000"
+        btnKEY8["justify"] = "center"
+        btnKEY8["text"] = "8"
+        btnKEY8.place(x=40, y=200, width=40, height=40)
+        btnKEY8["command"] = self.btnKEY8_command
 
-        btn8=tk.Button(self)
-        btn8["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn8["font"] = ft
-        btn8["fg"] = "#000000"
-        btn8["justify"] = "center"
-        btn8["text"] = "8"
-        btn8.place(x=70,y=210,width=48,height=48)
-        btn8["command"] = self.btn8_command
+        btnKEY9 = tk.Button(self)
+        btnKEY9["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY9["font"] = ft
+        btnKEY9["fg"] = "#000000"
+        btnKEY9["justify"] = "center"
+        btnKEY9["text"] = "9"
+        btnKEY9.place(x=80, y=200, width=40, height=40)
+        btnKEY9["command"] = self.btnKEY9_command
 
-        btn9=tk.Button(self)
-        btn9["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn9["font"] = ft
-        btn9["fg"] = "#000000"
-        btn9["justify"] = "center"
-        btn9["text"] = "9"
-        btn9.place(x=130,y=210,width=48,height=48)
-        btn9["command"] = self.btn9_command
+        btnKEYstar = tk.Button(self)
+        btnKEYstar["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEYstar["font"] = ft
+        btnKEYstar["fg"] = "#000000"
+        btnKEYstar["justify"] = "center"
+        btnKEYstar["text"] = "*"
+        btnKEYstar.place(x=0, y=240, width=40, height=40)
+        btnKEYstar["command"] = self.btnKEYstar_command
 
-        btnStar=tk.Button(self)
-        btnStar["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btnStar["font"] = ft
-        btnStar["fg"] = "#000000"
-        btnStar["justify"] = "center"
-        btnStar["text"] = "*"
-        btnStar.place(x=10,y=270,width=48,height=48)
-        btnStar["command"] = self.btnStar_command
+        btnKEY0 = tk.Button(self)
+        btnKEY0["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEY0["font"] = ft
+        btnKEY0["fg"] = "#000000"
+        btnKEY0["justify"] = "center"
+        btnKEY0["text"] = "0"
+        btnKEY0.place(x=40, y=240, width=40, height=40)
+        btnKEY0["command"] = self.btnKEY0_command
 
-        btn0=tk.Button(self)
-        btn0["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btn0["font"] = ft
-        btn0["fg"] = "#000000"
-        btn0["justify"] = "center"
-        btn0["text"] = "0"
-        btn0.place(x=70,y=270,width=48,height=48)
-        btn0["command"] = self.btn0_command
+        btnKEYpound = tk.Button(self)
+        btnKEYpound["bg"] = "#1e90ff"
+        ft = tkFont.Font(family='Times', size=22)
+        btnKEYpound["font"] = ft
+        btnKEYpound["fg"] = "#000000"
+        btnKEYpound["justify"] = "center"
+        btnKEYpound["text"] = "#"
+        btnKEYpound.place(x=80, y=240, width=40, height=40)
+        btnKEYpound["command"] = self.btnKEYpound_command
 
-        btnPound=tk.Button(self)
-        btnPound["bg"] = "#1e9fff"
-        ft = tkFont.Font(family='Times',size=22)
-        btnPound["font"] = ft
-        btnPound["fg"] = "#000000"
-        btnPound["justify"] = "center"
-        btnPound["text"] = "#"
-        btnPound.place(x=130,y=270,width=48,height=48)
-        btnPound["command"] = self.btnPound_command
+        btnUSER1 = tk.Button(self)
+        btnUSER1["bg"] = "#00babd"
+        ft = tkFont.Font(family='Times', size=14)
+        btnUSER1["font"] = ft
+        btnUSER1["fg"] = "#000000"
+        btnUSER1["justify"] = "center"
+        btnUSER1["text"] = "User 1"
+        btnUSER1.place(x=120, y=120, width=80, height=30)
+        btnUSER1["command"] = self.btnUSER1_command
 
-        btnUser1=tk.Button(self)
-        btnUser1["bg"] = "#999999"
-        ft = tkFont.Font(family='Times',size=12)
-        btnUser1["font"] = ft
-        btnUser1["fg"] = "#000000"
-        btnUser1["justify"] = "center"
-        btnUser1["text"] = "User 1"
-        btnUser1.place(x=190,y=90,width=64,height=48)
-        btnUser1["command"] = self.btnUser1_command
+        btnUSER2 = tk.Button(self)
+        btnUSER2["bg"] = "#00babd"
+        ft = tkFont.Font(family='Times', size=14)
+        btnUSER2["font"] = ft
+        btnUSER2["fg"] = "#000000"
+        btnUSER2["justify"] = "center"
+        btnUSER2["text"] = "User 2"
+        btnUSER2.place(x=120, y=150, width=80, height=30)
+        btnUSER2["command"] = self.btnUSER2_command
 
-        btnUser2=tk.Button(self)
-        btnUser2["bg"] = "#999999"
-        ft = tkFont.Font(family='Times',size=12)
-        btnUser2["font"] = ft
-        btnUser2["fg"] = "#000000"
-        btnUser2["justify"] = "center"
-        btnUser2["text"] = "User 2"
-        btnUser2.place(x=190,y=150,width=64,height=48)
-        btnUser2["command"] = self.btnUser2_command
+        btnUSER3 = tk.Button(self)
+        btnUSER3["bg"] = "#00babd"
+        ft = tkFont.Font(family='Times', size=14)
+        btnUSER3["font"] = ft
+        btnUSER3["fg"] = "#000000"
+        btnUSER3["justify"] = "center"
+        btnUSER3["text"] = "User 3"
+        btnUSER3.place(x=120, y=180, width=80, height=30)
+        btnUSER3["command"] = self.btnUSER3_command
 
-        btnUser3=tk.Button(self)
-        btnUser3["bg"] = "#999999"
-        ft = tkFont.Font(family='Times',size=12)
-        btnUser3["font"] = ft
-        btnUser3["fg"] = "#000000"
-        btnUser3["justify"] = "center"
-        btnUser3["text"] = "User 3"
-        btnUser3.place(x=190,y=210,width=64,height=48)
-        btnUser3["command"] = self.btnUser3_command
+        btnUSER4 = tk.Button(self)
+        btnUSER4["bg"] = "#00babd"
+        ft = tkFont.Font(family='Times', size=14)
+        btnUSER4["font"] = ft
+        btnUSER4["fg"] = "#000000"
+        btnUSER4["justify"] = "center"
+        btnUSER4["text"] = "User 4"
+        btnUSER4.place(x=120, y=210, width=80, height=30)
+        btnUSER4["command"] = self.btnUSER4_command
 
-        btnUser4=tk.Button(self)
-        btnUser4["bg"] = "#999999"
-        ft = tkFont.Font(family='Times',size=12)
-        btnUser4["font"] = ft
-        btnUser4["fg"] = "#000000"
-        btnUser4["justify"] = "center"
-        btnUser4["text"] = "User 4"
-        btnUser4.place(x=190,y=270,width=64,height=48)
-        btnUser4["command"] = self.btnUser4_command
-
-        btnAB=tk.Button(self)
+        btnAB = tk.Button(self)
         btnAB["bg"] = "#ff5722"
-        ft = tkFont.Font(family='Times',size=22)
+        ft = tkFont.Font(family='Times', size=30)
         btnAB["font"] = ft
         btnAB["fg"] = "#000000"
         btnAB["justify"] = "center"
-        btnAB["text"] = "A / B"
-        btnAB.place(x=190,y=10,width=64,height=64)
+        btnAB["text"] = "A/B"
+        btnAB.place(x=120, y=240, width=80, height=40)
         btnAB["command"] = self.btnAB_command
 
-    def btnClear_command(self):
-        self.clear()
+        lblVFO1RX = tk.Label(self)
+        ft = tkFont.Font(family='Times', size=12)
+        lblVFO1RX["bg"] = "#393d49"
+        lblVFO1RX["font"] = ft
+        lblVFO1RX["fg"] = "#cc0000"
+        lblVFO1RX["justify"] = "center"
+        lblVFO1RX["text"] = self.VFO1RX_TXT
+        lblVFO1RX.place(x=0, y=20, width=32, height=20)
 
+        lblVFO1TX = tk.Label(self)
+        ft = tkFont.Font(family='Times', size=10)
+        lblVFO1TX["bg"] = "#393d49"
+        lblVFO1TX["font"] = ft
+        lblVFO1TX["fg"] = "#90ee90"
+        lblVFO1TX["justify"] = "center"
+        lblVFO1TX["text"] = self.VFO1TX_TXT
+        lblVFO1TX.place(x=0, y=40, width=32, height=20)
 
-    def btn1_command(self):
-        self.press('1')
+        lblVFO2RX = tk.Label(self)
+        ft = tkFont.Font(family='Times', size=12)
+        lblVFO2RX["bg"] = "#393d49"
+        lblVFO2RX["font"] = ft
+        lblVFO2RX["fg"] = "#cc0000"
+        lblVFO2RX["justify"] = "center"
+        lblVFO2RX["text"] = self.VFO2RX_TXT
+        lblVFO2RX.place(x=0, y=80, width=32, height=20)
 
+        lblVFO2TX = tk.Label(self)
+        ft = tkFont.Font(family='Times', size=10)
+        lblVFO2TX["bg"] = "#393d49"
+        lblVFO2TX["font"] = ft
+        lblVFO2TX["fg"] = "#90ee90"
+        lblVFO2TX["justify"] = "center"
+        lblVFO2TX["text"] = self.VFO2TX_TXT
+        lblVFO2TX.place(x=0, y=100, width=32, height=20)
 
-    def btn2_command(self):
-        self.press('2')
+        lblVFO1name = tk.Label(self)
+        lblVFO1name["bg"] = "#393d49"
+        ft = tkFont.Font(family='Times', size=12)
+        lblVFO1name["font"] = ft
+        lblVFO1name["fg"] = "#ffffff"
+        lblVFO1name["justify"] = "center"
+        lblVFO1name["text"] = self.VFO1_TXT
+        lblVFO1name.place(x=0, y=0, width=200, height=20)
 
+        lblVFO2name = tk.Label(self)
+        lblVFO2name["bg"] = "#393d49"
+        ft = tkFont.Font(family='Times', size=12)
+        lblVFO2name["font"] = ft
+        lblVFO2name["fg"] = "#ffffff"
+        lblVFO2name["justify"] = "center"
+        lblVFO2name["text"] = self.VFO2_TXT
+        lblVFO2name.place(x=0, y=60, width=200, height=20)
 
-    def btn3_command(self):
-        self.press('3')
+        btnTX = tk.Button(self)
+        btnTX["bg"] = "#90ee90"
+        ft = tkFont.Font(family='Times', size=10)
+        btnTX["font"] = ft
+        btnTX["fg"] = "#000000"
+        btnTX["justify"] = "center"
+        btnTX["text"] = "Transmit"
+        btnTX.place(x=0, y=280, width=200, height=35)
+        btnTX["command"] = self.btnTX_command
 
+    def btnKEY1_command(self):
+        self.tty.send_single("1")
 
-    def btnTX_command(self):
-        print("TX Pressed")
-        if self.btnTX["bg"] == "#90ee90":
-            self.btnTX["bg"] = "#ff5722"
-        else:
-            self.btnTX["bg"] = "#90ee90"
+    def btnKEY2_command(self):
+        self.tty.send_single("2")
 
+    def btnKEY3_command(self):
+        self.tty.send_single("3")
 
-    def btn4_command(self):
-        self.press('4')
+    def btnKEY4_command(self):
+        self.tty.send_single("4")
 
+    def btnKEY5_command(self):
+        self.tty.send_single("5")
 
-    def btn5_command(self):
-        self.press('5')
+    def btnKEY6_command(self):
+        self.tty.send_single("6")
 
+    def btnKEY7_command(self):
+        self.tty.send_single("7")
 
-    def btn6_command(self):
-        self.press('6')
+    def btnKEY8_command(self):
+        self.tty.send_single("8")
 
+    def btnKEY9_command(self):
+        self.tty.send_single("9")
 
-    def btn7_command(self):
-        self.press('7')
+    def btnKEYstar_command(self):
+        self.tty.send_single("*")
 
+    def btnKEY0_command(self):
+        self.tty.send_single("0")
 
-    def btn8_command(self):
-        self.press('8')
+    def btnKEYpound_command(self):
+        self.tty.send_single("#")
 
+    def btnUSER1_command(self):
+        self.tty.send_single("User1")
 
-    def btn9_command(self):
-        self.press('9')
+    def btnUSER2_command(self):
+        self.tty.send_single("User2")
 
+    def btnUSER3_command(self):
+        self.tty.send_single("User3")
 
-    def btnStar_command(self):
-        print("* Pressed")
-
-
-    def btn0_command(self):
-        self.press('0')
-
-
-    def btnPound_command(self):
-        print("# Pressed")
-
-
-    def btnUser1_command(self):
-        print("User1 Pressed")
-
-
-    def btnUser2_command(self):
-        print("User2 Pressed")
-
-
-    def btnUser3_command(self):
-        print("User3 Pressed")
-
-
-    def btnUser4_command(self):
-        print("User4 Pressed")
-
+    def btnUSER4_command(self):
+        self.tty.send_single("User4")
 
     def btnAB_command(self):
-        print("AB Pressed")
+        self.tty.send_single("AB")
+
+    def btnTX_command(self):
+        self.tty.setRTS(not self.tty.isRTS)
+
 
 if __name__ == "__main__":
+    import argparse
+    # create a parser
+    parser = argparse.ArgumentParser()
+    # -----------Parser Arguments -----------------------
+    # Without a '-' it is a must have
+    # parser.add_argument('keypresses', help='A string of keypresses', type=str)
+    # With a '-' it is optional
+    parser.add_argument('-d', '--device', help='Set the device. Default is "/dev/ttyUSB0"',
+                        type=str, default='/dev/ttyUSB0')
+    parser.add_argument('-1', '--vfo1', help='Set the starting frequency for VFO 1. Default is "144.000"',
+                        type=str, default='144.000')
+    parser.add_argument('-2', '--vfo2', help='Set the starting frequency for VFO 2. Default is "435.000"',
+                        type=str, default='435.000')
+    # -------------- End Arguments -----------------------
+    args = parser.parse_args()
+
     loop = asyncio.get_event_loop()
-    app = App(loop)
+    app = App(loop, com_device=args.device, freq=args.freq)
     loop.run_forever()
-    loop.close())
+    loop.close()
