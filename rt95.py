@@ -1,6 +1,5 @@
 import asyncio
 import serial
-from time import sleep
 import struct
 
 KEYS = {'RESET': b'AL~KR\r\n',
@@ -108,9 +107,33 @@ class RT95:
 
 
 if __name__ == "__main__":
+    import argparse
+#    from time import sleep
     radio = RT95()
-    while True:
-        radio.setRTS(True)
-        sleep(1)
-        radio.setRTS(False)
-        sleep(1)
+#    radio.setRTS(True)
+#    sleep(1)
+#    radio.setRTS(False)
+#    sleep(1)
+
+    # create a parser
+    parser = argparse.ArgumentParser()
+    # -----------Create Arguments -----------------------
+    # Without a '-' it is a must-have
+    parser.add_argument('keypresses', help='A string of keypresses', type=str)
+    # With a '-' it is optional
+    parser.add_argument('-d', '--device', help='Set the device. Default is "/"dev/ttyUSB0"',
+                        type=str, default='/dev/ttyUSB0')
+    # -------------- End Arguments -----------------------
+
+    args = parser.parse_args()
+    print(args.device)
+    if args.keyresses in KEYS.keys():   
+        radio.send_single(args.keypresses)
+    else:
+        for l in args.keypresses:
+            if l in KEYS.keys():
+                pass
+            else:
+                print(f"ERROR invalid key: {l}")
+                exit()
+        radio.send_multiple(args.keypresses)
